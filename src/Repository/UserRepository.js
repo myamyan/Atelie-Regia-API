@@ -21,35 +21,25 @@ export async function loginCliente(email, senha) {
 
   const comando = `
   
-        select   id_cliente             id,
+        select   id_cadcliente             id,
             ds_emailcliente             email,
             ds_senhacliente             senha
 
         from tb_cadastrocliente
 
         where ds_emailcliente = ?
-        and ds_senhacliente = ?
+        and ds_senhacliente = ?;
 
   `
 
   const [linhas] = await con.query(comando, [email, senha]);
-  return linhas;
+  
+  return linhas[0];
 
 }
+
 
 //feita conexão ↓
-export async function verificarEmailExistente(email) {
-  try {
-    const [linhas, campos] = await con.execute('SELECT * FROM tb_cadastrocliente WHERE  ds_emailcliente    = ?', [email]);
-
-    return linhas.length > 0;
-  } catch (err) {
-    console.error('Erro ao verificar email existente:', err);
-    return false;
-  }
-}
-
-//feita cpnexão ↓
 export async function CadastroInformacoesPessoais(infop) {
 
   const comando = ` 
@@ -78,7 +68,15 @@ export async function CadastroPedido(pedido) {
 
   `
 
-  const [resposta] = await con.query(comando, [pedido.idcliente, pedido.numeroitens, pedido.vltotal, pedido.situacao, pedido.tppagamento, pedido.nomecartao, pedido.nrcartao, pedido.dtvalidade, pedido.nrcodseguranca, pedido.parcelas, pedido.entrega]);
+  const [resposta] = await con.query(comando, [pedido.idcliente,
+     pedido.numeroitens,
+      pedido.vltotal, 
+      pedido.situacao,
+       pedido.tppagamento, pedido.nomecartao, 
+       pedido.nrcartao, pedido.dtvalidade,
+        pedido.nrcodseguranca, 
+        pedido.parcelas,
+         pedido.entrega]);
 
   pedido.id = resposta.insertId;
 
@@ -218,25 +216,6 @@ export async function FiltroPorTamanho(id) {
   return linhas;
 
 }
-
-
-
-// export async function FiltroPorValor( valornormal, valorpromocional ) {
-
-//   const comando = `  
-
-//     select * from tb_produto 
-
-//     where vl_preco or vl_promocao between ? or ?;
-
-//     `
-
-//   const [linhas] = await con.query(comando, [ valornormal, valorpromocional ]);
-
-//   return linhas[0];
-
-// }
-
 
 
 export async function FiltroPorPromocao(promocao) {
@@ -397,12 +376,12 @@ export async function ItensPedido(id) {
 }
 
 
-export async function ConsultarEnderecosPedido(id) {
+export async function ConsultarEnderecos(id) {
 
   const comando = ` 
 
-  select * from tb_pedido_item
-  inner join tb_enderecos on tb_enderecos.id_endereco = tb_pedido_item.id_endereco
+  select * from tb_endereco_cliente
+  inner join tb_enderecos on tb_enderecos.id_endereco = tb_endereco_cliente.id_endereco
   where id_cliente like ?;
 
   `
@@ -459,4 +438,50 @@ export async function alterarEndereco(id, enderecos) {
 
   const [resposta] = await con.query(comando, [enderecos.endereco, enderecos.cep, enderecos.complemento, enderecos.numres, id]);
   return resposta.affectedRows;
+}
+
+
+export async function verCartao(id) {
+  const comando =
+
+    `SELECT * from tb_pedido
+    where id_pedido like ?`
+
+    const [linhas] = await con.query(comando, [id]);
+
+    return linhas;
+
+}
+
+
+
+export async function AssociarEnderecoCliente( enderecocliente ){
+
+  const comando = ` 
+  
+  insert into tb_endereco_cliente( id_endereco, id_cliente )
+                      values( ?, ? )
+
+  `
+
+  const [linhas] = await con.query(comando, [enderecocliente.endereco, enderecocliente.cliente]);
+
+  enderecocliente.id = linhas.insertId;
+
+  return enderecocliente;
+
+}
+
+
+export async function ExibirtodosEnderecos(){
+
+  const comando = `
+  
+    select * from tb_enderecos;
+  `
+
+  const [ linhas ] = await con.query(comando)
+
+  return linhas;
+
 }

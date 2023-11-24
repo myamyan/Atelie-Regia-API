@@ -1,12 +1,102 @@
 
 
-import { inserirLoginadm, verificarEmailExistente, CadastrarProduto, AlterarProduto, DeletarProduto, cadastrarImagem, BuscarTodosPedidos, BuscarPedidosConcluidos, BuscarPedidosAndamento, FiltroPorMaisCaro, FiltroPorMaisBarato, ConsultaGeralProdutosAdm, ConsultaPorNomeAdm, FiltroPorCategoriaAdm, FiltroPorTecidoAdm, FiltroPorDesignerAdm, FiltroPorCorAdm, FiltroPorTamanhoAdm, FiltroPorValorAdm, FiltroPorPromocaoAdm, FiltroPorDestaqueAdm, FiltroPorDisponivelAdm, inserircategorias, inserirtecidos, inserirdesigner, inserircores, inserirtamanho, AssociarCategoriaProduto, AssociarTamanhoProduto, AssociarCorProduto, AssociarTecidosProduto, DesassociarCategoriaProduto, ExcluirImagem, DesassociarTamanhoProduto, DesassociarCoresProduto, DesassociarTecidosProduto, ConsultarImagem, ExcluirPedido, AssociarImagemProduto, SelectCategorias, SelectTecidos, SelectDesigner, SelectCores } from '../Repository/AdmRepository.js';
+import { inserirLoginadm, verificarEmailExistente, CadastrarProduto, AlterarProduto, DeletarProduto, cadastrarImagem, BuscarTodosPedidos, BuscarPedidosConcluidos, BuscarPedidosAndamento, FiltroPorMaisCaro, FiltroPorMaisBarato, ConsultaGeralProdutosAdm, ConsultaPorNomeAdm, FiltroPorCategoriaAdm, FiltroPorTecidoAdm, FiltroPorDesignerAdm, FiltroPorCorAdm, FiltroPorTamanhoAdm, FiltroPorValorAdm, FiltroPorPromocaoAdm, FiltroPorDestaqueAdm, FiltroPorDisponivelAdm, inserircategorias, inserirtecidos, inserirdesigner, inserircores, inserirtamanho, AssociarCategoriaProduto, AssociarTamanhoProduto, AssociarCorProduto, AssociarTecidosProduto, DesassociarCategoriaProduto, ExcluirImagem, DesassociarTamanhoProduto, DesassociarCoresProduto, DesassociarTecidosProduto, ConsultarImagem, ExcluirPedido, AssociarImagemProduto, SelectCategorias, SelectTecidos, SelectDesigner, SelectCores, buscarCategorias, buscarDesigner, buscarCores, buscartecido, buscartamanho, alterarImagem, buscarProdutosPorCategoria, ConsultaGeralProdutos, DeletarProdutoImagem } from '../Repository/AdmRepository.js';
 
 import multer from 'multer';
 import { Router } from "express"
 
 const server = Router();
 const upload = multer({ dest: 'storage/imagensprodutos' });
+
+
+server.get('/buscarcategoriafiltros', async (req, resp) => {
+    try {
+        const categoria = req.query.categoria; 
+        const listaProdutos = await buscarProdutosPorCategoria(categoria);
+        resp.send(listaProdutos);
+    } catch (err) {
+        resp.status(400).send({
+            erro: err.message
+        });
+    }
+});
+
+
+server.get('/buscarcategoria', async (req, resp) => {
+
+    try {
+
+        const listacategorias = await buscarCategorias();
+
+        resp.send(listacategorias);
+
+    } catch (err) {
+        resp.status(400).send({
+            erro: err.message
+        })
+    }
+
+})
+
+server.get('/buscardesigner', async (req, resp) => {
+
+    try {
+
+        const listadesigner = await buscarDesigner();
+
+        resp.send(listadesigner);
+
+    } catch (err) {
+        resp.status(400).send({
+            erro: err.message
+        })
+    }
+})
+
+server.get('/buscarcores', async (req, resp) => {
+
+    try {
+
+        const listacores = await buscarCores();
+
+        resp.send(listacores);
+
+    } catch (err) {
+        resp.status(400).send({
+            erro: err.message
+        })
+    }
+})
+
+server.get('/buscartecido', async (req, resp) => {
+
+    try {
+
+        const listatecido = await buscartecido();
+
+        resp.send(listatecido);
+
+    } catch (err) {
+        resp.status(400).send({
+            erro: err.message
+        })
+    }
+})
+
+server.get('/buscartamanho', async (req, resp) => {
+
+    try {
+
+        const listatamanho = await buscartamanho();
+
+        resp.send(listatamanho);
+
+    } catch (err) {
+        resp.status(400).send({
+            erro: err.message
+        })
+    }
+})
 
 
 server.post('/adm/login', async (req, resp) => {
@@ -117,20 +207,42 @@ server.put('/adm/produto/alterar/:id', async (req, resp) => {
 })
 
 
-
-server.delete('/adm/produto/deletar/:id', async (req, resp) => {
+server.put('/adm/produto/imagem/alterar/:id', async (req, resp) => {
     try {
         const { id } = req.params;
+        const imagem = req.body;
 
-        const resposta = await DeletarProduto(id);
+
+        const resposta = await alterarImagem(  id, imagem );
 
         resp.status(204).send();
+
     } catch (err) {
         resp.status(400).send({
             erro: err.message
         })
     }
+
+
 })
+
+
+
+server.delete('/adm/produto/deletar/:id', async (req, resp) => {
+    try {
+        const  id  = Number(req.params.id);
+        await DeletarProdutoImagem(id);
+        await DeletarProduto(id);
+
+        resp.status(204).send({ mensagem: 'Produto excluído com sucesso' });
+    } catch (err) {
+        console.error(err);
+        resp.status(400).send({
+            erro: 'Erro ao excluir produto',
+            detalhes: err.message
+        });
+    }
+});
 
 
 
@@ -236,39 +348,14 @@ server.post('/adm/cadastro/tamanho', async (req, resp) => {
 
 
 
-
-server.post('/adm/cadastro/produto/imagem', upload.single('imagem'), async (req, resp) => {
-
-    try {
-
-        const imagem = req.file.path;
-
-        const resposta = await cadastrarImagem(imagem);
-
-        if (resposta != 1)
-            throw new Error('A imagem não pode ser salva.');
-
-        resp.status(204).send();
-
-    } catch (err) {
-
-        resp.status(400).send({
-
-            erro: err.message
-
-        })
-
-    }
-}
-)
-
-
 server.post('/adm/associacao/imagem-produto', async (req, resp) => {
 
     try {
 
 
         const imagemParaAssociar = req.body;
+
+        console.log(imagemParaAssociar);
 
         const imagemAssociada = await AssociarImagemProduto(imagemParaAssociar);
 
@@ -285,11 +372,9 @@ server.post('/adm/associacao/imagem-produto', async (req, resp) => {
 
 
 server.post('/adm/associacao/categoria-produto', async (req, resp) => {
-
     try {
-
-
         const categoriaParaAssociar = req.body;
+        console.log(categoriaParaAssociar);
 
         const categoriaAssociada = await AssociarCategoriaProduto(categoriaParaAssociar);
 
@@ -484,6 +569,22 @@ server.get('/adm/consulta/produtos', async (req, resp) => {
     try {
 
         const listaprodutos = await ConsultaGeralProdutosAdm();
+
+        resp.send(listaprodutos);
+
+    } catch (err) {
+        resp.status(400).send({
+            erro: err.message
+        })
+    }
+})
+
+
+server.get('/adm/consulta/produto/:id', async (req, resp) => {
+
+    try {
+        let id = req.params.id
+        const listaprodutos = await ConsultaGeralProdutos(id);
 
         resp.send(listaprodutos);
 
@@ -856,5 +957,23 @@ server.get('/adm/select/cores', async (req, resp) => {
     }
 })
 
+
+server.post('/adm/cadastro/produto/imagem', upload.single('imagem'), async (req, resp) => {
+    try {
+      const imagem = req.file.path;
+  
+      const idDaImagemInserida = await cadastrarImagem(imagem);
+  
+      resp.status(200).send({
+        id: idDaImagemInserida
+      });
+  
+    } catch (err) {
+      resp.status(400).send({
+        erro: err.message
+      });
+    }
+  });
+  
 
 export default server;

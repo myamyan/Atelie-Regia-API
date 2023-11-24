@@ -1,82 +1,195 @@
-import { con } from './connection.js'
+import { con } from "./connection.js";
+
+export async function buscarCategorias() {
+  
+  const comando = ` select* from tb_categorias;`;
+
+  const [linhas] = await con.query(comando);
+
+  
+  return linhas;
+
+}
+
+export async function buscarProdutosPorCategoria(categoria) {
+
+  categoria= '%' + categoria + '%'
+  const comando = 
+  `
+    SELECT *
+    FROM tb_produto 
+    LEFT JOIN tb_p_categorias  ON tb_produto.id_produto = tb_p_categorias.id_produto
+   LEFT JOIN tb_categorias  ON tb_p_categorias.id_categorias = tb_categorias.id_categorias
+
+  `;
+
+  try {
+    console.log('Categoria recebida no servidor:', categoria);
+    
+    const [linhas] = await con.query(comando, [categoria]);
+    
+    console.log('Resultado da consulta:', linhas);
+    
+    return linhas;
+  } catch (error) {
+    console.error('Erro ao executar consulta:', error);
+    throw error;
+  }
+}
+
+
+export async function buscarDesigner() {
+  
+  const comando = ` select* from tb_designer;`;
+
+  const [linhas] = await con.query(comando);
+
+  
+  return linhas;
+}
+
+export async function buscarCores() {
+  
+  const comando = ` select* from tb_cores`;
+
+  const [linhas] = await con.query(comando);
+
+  
+  return linhas;
+}
+
+export async function buscartecido() {
+  
+  const comando = ` select* from tb_produto_tecidos`;
+
+  const [linhas] = await con.query(comando);
+
+  
+  return linhas;
+}
+
+export async function buscartamanho() {
+  
+  const comando = ` select* from tb_tamanho`;
+
+  const [linhas] = await con.query(comando);
+
+  
+  return linhas;
+}
 
 //feita conexão ↓
 export async function inserirLoginadm(loginadm) {
-
-    const comando =
-
-        `INSERT INTO tb_admin ( ds_email, ds_senha )
+  const comando = `INSERT INTO tb_admin ( ds_email, ds_senha )
             values( ?, ? ) `;
 
-    const [resposta] = await con.query(comando, [loginadm.email, loginadm.senha]);
-    loginadm.id = resposta.insertId;
+  const [resposta] = await con.query(comando, [loginadm.email, loginadm.senha]);
+  loginadm.id = resposta.insertId;
 
-    return loginadm;
-
+  return loginadm;
 }
 
 //feita conexão ↓
 export async function verificarEmailExistente(email) {
-    try {
-        const [linhas, campos] = await con.execute('SELECT * FROM tb_admin WHERE ds_email = ?', [email]);
+  try {
+    const [linhas, campos] = await con.execute(
+      "SELECT * FROM tb_admin WHERE ds_email = ?",
+      [email]
+    );
 
-        return linhas.length > 0;
-    } catch (err) {
-        console.error('Erro ao verificar email existente:', err);
-        return false;
-    }
+    return linhas.length > 0;
+  } catch (err) {
+    console.error("Erro ao verificar email existente:", err);
+    return false;
+  }
 }
 
 //feita conexão ↓
 export async function buscaremail(email) {
-    const comando =
-
-        `SELECT id_admin  id,
+  const comando = `SELECT id_admin  id,
         ds_email          email,
         ds_senha          senha
         FROM tb_admin
         WHERE ds_email = ?`;
 
-    const [resp] = await con.query(comando, [`%${email}%`]);
-    return resp;
-
+  const [resp] = await con.query(comando, [`%${email}%`]);
+  return resp;
 }
 
 //feita api ↓
 export async function CadastrarProduto(produto) {
-    const comando =
-        `insert into tb_produto ( nm_produto, vl_preco, vl_promocao, bt_promocao, bt_destaque, bt_disponivel, ds_detalhes, nr_estoque, id_designer )
-                                values ( ?, ?, ?, ?, ?, ?, ?, ?, ? );`
+  const comando = `insert into tb_produto ( nm_produto, vl_preco, vl_promocao, bt_promocao, bt_destaque, bt_disponivel, ds_detalhes, nr_estoque, id_designer )
+                                values ( ?, ?, ?, ?, ?, ?, ?, ?, ? );`;
 
-                                
-    const [resposta] = await con.query(comando, [ produto.nome, produto.preco, produto.promocao, produto.promocaobool, produto.destaquebool, produto.disponivelbool, produto.detalhes, produto.estoque, produto.iddesigner ]);
-    produto.id = resposta.insertId;
+  const [resposta] = await con.query(comando, [
+    produto.nome,
+    produto.preco,
+    produto.promocao,
+    produto.promocaobool,
+    produto.destaquebool,
+    produto.disponivelbool,
+    produto.detalhes,
+    produto.estoque,
+    produto.iddesigner,
+  ]);
+  produto.id = resposta.insertId;
 
-    return produto;
+  return produto;
 }
 
 //feita conexão ↓
 export async function ConsultaGeralProdutosAdm() {
+  const comando = `
 
-    const comando = `
+        select tb_produto.id_produto,
+        nm_produto,
+        vl_preco,
+        vl_promocao,
+        bt_promocao,
+        bt_destaque,
+        bt_disponivel,
+        ds_detalhes,
+        nr_estoque,
+        id_designer,id_p_ctg,
+        tb_categorias.id_categorias,
+        nm_categoria,
+        id_p_img,
+        tb_produto_imagem.id_imagem,
+        img_link 
+          from tb_produto    
+     left join tb_p_categorias on tb_produto.id_produto = tb_p_categorias.id_produto
+     left join tb_categorias on tb_p_categorias.id_categorias = tb_categorias.id_categorias
+     left join tb_p_imagem on tb_produto.id_produto = tb_p_imagem.id_produto
+     left join tb_produto_imagem on tb_p_imagem.id_imagem = tb_produto_imagem.id_imagem
+    `;
+    console.log(comando);
+  const [linhas] = await con.query(comando);
 
-        select * from tb_produto;
-
-    `
-
-    const [linhas] = await con.query(comando);
-    
-    return linhas;
-
-
+  return linhas;
 }
 
-export async function AlterarProduto(id, produto) {
+export async function ConsultaGeralProdutos(id) {
+  const comando = `
 
-    const comando =
-        `
+        select * 
+          from tb_produto    
+     left join tb_p_categorias on tb_produto.id_produto = tb_p_categorias.id_produto
+     left join tb_categorias on tb_p_categorias.id_categorias = tb_categorias.id_categorias
+     left join tb_p_imagem on tb_produto.id_produto = tb_p_imagem.id_produto
+     left join tb_produto_imagem on tb_p_imagem.id_imagem = tb_produto_imagem.id_imagem
+     where tb_produto.id_produto = ?
+    `;
+ 
+  const [linhas] = await con.query(comando, [id]);
+
+  return linhas;
+}
+
+
+export async function AlterarProduto(id, produto) {
+  const comando = `
     update  tb_produto
-    set     id_imagem               = ?,
+    set    
             nm_produto              = ?,
             vl_preco                = ?,
             vl_promocao             = ?,
@@ -87,256 +200,285 @@ export async function AlterarProduto(id, produto) {
             nr_estoque              = ?,
             id_designer             = ?
             
-            where id_produto        = ?`
+            where id_produto        = ?`;
 
-    const [resposta] = await con.query(comando, [  produto.idimagem, produto.nome, produto.preco, produto.promocao, produto.promocaobool, produto.destaquebool, produto.disponivelbool, produto.detalhes, produto.estoque, produto.iddesigner, id]);
+  const [resposta] = await con.query(comando, [
+    produto.nm_nome,
+    produto.vl_preco,
+    produto.vl_promocao,
+    produto.bt_promocao,
+    produto.bt_destaque,
+    produto.bt_disponivel,
+    produto.ds_detalhes,
+    produto.nr_estoque,
+    produto.designer,
+    id,
+  ]);
 
-    return resposta.affectedRows;
+  return resposta.affectedRows;
 }
 
 
-
 export async function DeletarProduto(id) {
+  const comando = `DELETE FROM tb_produto WHERE id_produto = ?`;
 
-    const comando =
-        `delete from tb_produto
-                where id_produto = ? `
+  try {
 
     const [resposta] = await con.query(comando, [id]);
+
+
+    if (resposta.affectedRows > 0) {
+      console.log(`Produto com ID ${id} excluído com sucesso.`);
+    } else {
+      console.log(`Nenhum produto encontrado com o ID ${id}. Nenhuma exclusão realizada.`);
+    }
+
     return resposta.affectedRows;
+  } catch (err) {
+   
+    console.error(`Erro ao excluir produto com ID ${id}:`, err.message);
+    throw err;
+  }
+}
+
+
+export async function DeletarProdutoImagem(id) {
+  const comando = `DELETE FROM tb_p_imagem WHERE id_produto = ?`;
+
+  try {
+
+    const [resposta] = await con.query(comando, [id]);
+
+
+    if (resposta.affectedRows > 0) {
+      console.log(`Produto com ID ${id} excluído com sucesso.`);
+    } else {
+      console.log(`Nenhum produto encontrado com o ID ${id}. Nenhuma exclusão realizada.`);
+    }
+
+    return resposta.affectedRows;
+  } catch (err) {
+   
+    console.error(`Erro ao excluir produto com ID ${id}:`, err.message);
+    throw err;
+  }
 }
 
 
 //feita api ↓
 export async function inserircategorias(categoria) {
-    const comando = `insert into tb_categorias (nm_categoria)
-	values( ? );`
+  const comando = `insert into tb_categorias (nm_categoria)
+	values( ? );`;
 
-    const [resposta] = await con.query(comando, [categoria.nome]);
-    categoria.id = resposta.insertId;
+  const [resposta] = await con.query(comando, [categoria.nome]);
+  categoria.id = resposta.insertId;
 
-    return categoria;
+  return categoria;
 }
 
 //feita api ↓
 export async function inserirtecidos(tecidos) {
-    const comando = `
-    insert into tb_tecidos(ds_tipo)
-	values( ? );`
+  const comando = `
+    insert into tb_produto_tecidos(ds_tipo)
+	values( ? );`;
 
-    const [resposta] = await con.query(comando, [tecidos.tipo]);
-    tecidos.id = resposta.insertId;
+  const [resposta] = await con.query(comando, [tecidos.tipo]);
+  tecidos.id = resposta.insertId;
 
-    return tecidos;
+  return tecidos;
 }
 
 //feita api ↓
 export async function inserirdesigner(designer) {
-    const comando = `    
+  const comando = `    
     insert into tb_designer (nm_designer)
-        values( ? );`
+        values( ? );`;
 
-    const [resposta] = await con.query(comando, [designer.nome]);
-    designer.id = resposta.insertId;
+  const [resposta] = await con.query(comando, [designer.nome]);
+  designer.id = resposta.insertId;
 
-    return designer;
+  return designer;
 }
 
 //feita api ↓
 export async function inserircores(cores) {
-    const comando = `
+  const comando = `
     insert into tb_cores (ds_hexa_decimal)
 	values( ? );
-    `
+    `;
 
-    const [resposta] = await con.query(comando, [cores.codhexa]);
-    cores.id = resposta.insertId;
+  const [resposta] = await con.query(comando, [cores.codhexa]);
+  cores.id = resposta.insertId;
 
-    return cores;
+  return cores;
 }
 
 //feita api ↓
 export async function inserirtamanho(tamanho) {
-    const comando = `
+  const comando = `
     insert into tb_tamanho (ds_tamanho)
 	values( ? );
-    `
+    `;
 
-    const [resposta] = await con.query(comando, [tamanho.tamanho]);
-    tamanho.id = resposta.insertId;
+  const [resposta] = await con.query(comando, [tamanho.tamanho]);
+  tamanho.id = resposta.insertId;
 
-    return tamanho;
+  return tamanho;
 }
 
+// export async function cadastrarImagem(imagem) {
+//   const comando = `         
+//             insert into tb_produto_imagem( img_link )
+//                                     values( ? )
+//     `;
 
-export async function cadastrarImagem(imagem) {
-
-
-    const comando =
-
-        `         
-            insert into tb_produto_imagem( img_link )
-                                    values( ? )
-    `
-
-    const [resposta] = await con.query(comando, [imagem]);
-    return resposta.affectedRows;
-
-
-}
-
+//   const [resposta] = await con.query(comando, [imagem]);
+//   return resposta.affectedRows;
+// }
 
 //feita api ↓
-export async function AssociarImagemProduto( imagemproduto ){
-
-    const comando = ` 
+export async function AssociarImagemProduto(imagemproduto) {
+  const comando = ` 
     
     insert into tb_p_imagem( id_produto, id_imagem )
                         values( ?, ? )
 
-    `
+    `;
 
-    const [linhas] = await con.query(comando, [imagemproduto.idProduto, imagemproduto.idImagem]);
+  const [linhas] = await con.query(comando, [
+    imagemproduto.idProduto,
+    imagemproduto.idImagem,
+  ]);
 
-    imagemproduto.id = linhas.insertId;
+  imagemproduto.id = linhas.insertId;
 
-    return imagemproduto;
-
+  return imagemproduto;
 }
 
 //feita api ↓
-export async function AssociarCategoriaProduto( categoriaproduto ){
-
-    const comando = ` 
+export async function AssociarCategoriaProduto(categoriaproduto) {
+  const comando = ` 
     
     insert into tb_p_categorias( id_produto, id_categorias )
                         values( ?, ? )
 
-    `
+    `;
 
-    const [linhas] = await con.query(comando, [categoriaproduto.idProduto, categoriaproduto.idCategorias]);
+  const [linhas] = await con.query(comando, [
+    categoriaproduto.idProduto,
+    categoriaproduto.idCategorias,
+  ]);
 
-    categoriaproduto.id = linhas.insertId;
+  console.log(linhas);
 
-    return categoriaproduto;
+  categoriaproduto.id = linhas.insertId;
 
+  return categoriaproduto;
 }
 
 //feita api ↓
-export async function AssociarTamanhoProduto( tamanhoproduto ){
-
-    const comando = ` 
+export async function AssociarTamanhoProduto(tamanhoproduto) {
+  const comando = ` 
     
     insert into tb_p_tamanho( id_produto, id_tamanho )
                         values( ?, ? )
 
-    `
+    `;
 
-    const [linhas] = await con.query(comando, [tamanhoproduto.idProduto, tamanhoproduto.idTamanho]);
+  const [linhas] = await con.query(comando, [
+    tamanhoproduto.idProduto,
+    tamanhoproduto.idTamanho,
+  ]);
 
-    tamanhoproduto.id = linhas.insertId;
+  tamanhoproduto.id = linhas.insertId;
 
-    return tamanhoproduto;
-
+  return tamanhoproduto;
 }
 
 //feita api ↓
-export async function AssociarCorProduto( corproduto ){
-
-    const comando = ` 
+export async function AssociarCorProduto(corproduto) {
+  const comando = ` 
     
     insert into tb_p_cores( id_produto, id_cores )
                         values( ?, ? )
 
-    `
+    `;
 
-    const [linhas] = await con.query(comando, [corproduto.idProduto, corproduto.idCores]);
+  const [linhas] = await con.query(comando, [
+    corproduto.idProduto,
+    corproduto.idCores,
+  ]);
 
-    corproduto.id = linhas.insertId;
+  corproduto.id = linhas.insertId;
 
-    return corproduto;
-
+  return corproduto;
 }
 
 //feita api ↓
-export async function AssociarTecidosProduto( tecidoproduto ){
-
-    const comando = ` 
+export async function AssociarTecidosProduto(tecidoproduto) {
+  const comando = ` 
     
     insert into tb_p_tecidos( id_produto, id_tecido )
                         values( ?, ? )
 
-    `
+    `;
 
-    const [linhas] = await con.query(comando, [tecidoproduto.idProduto, tecidoproduto.idTecido]);
+  const [linhas] = await con.query(comando, [
+    tecidoproduto.idProduto,
+    tecidoproduto.idTecido,
+  ]);
 
-    tecidoproduto.id = linhas.insertId;
+  tecidoproduto.id = linhas.insertId;
 
-    return tecidoproduto;
-
+  return tecidoproduto;
 }
-
-
 
 //feita api ↓
 export async function BuscarTodosPedidos() {
-
-    const comando = `
+  const comando = `
     
     select * from tb_pedido_item;
 
-    `
+    `;
 
-    const [linhas] = await con.query(comando);
+  const [linhas] = await con.query(comando);
 
-    return linhas;
-
+  return linhas;
 }
 
 //feita api ↓
 export async function BuscarPedidosAndamento() {
-
-    const comando = `
+  const comando = `
     
         select * from tb_pedido_item inner join tb_pedido on tb_pedido.id_pedido = tb_pedido_item.id_pedido
         where ds_situacao like "Em andamento"
         ;
 
-    `
+    `;
 
-    const [linhas] = await con.query(comando);
+  const [linhas] = await con.query(comando);
 
-    return linhas
-
+  return linhas;
 }
 
 //feita api ↓
 export async function BuscarPedidosConcluidos() {
-
-    const comando = `
+  const comando = `
     
         select * from tb_pedido_item inner join tb_pedido on tb_pedido.id_pedido = tb_pedido_item.id_pedido where ds_situacao like "Aprovado"
 
-    `
+    `;
 
-    const [linhas] = await con.query(comando);
+  const [linhas] = await con.query(comando);
 
-    return linhas
-
+  return linhas;
 }
-
-
-
-
-
-
 
 // export async function FiltroPorMaisNovo() {
 
-
 //     const comando = `
-    
-//     select * from tb_pedido_item inner join tb_pedido on tb_pedido.id_pedido = tb_pedido_item.id_pedido order by dt_pedido ASC; 
+
+//     select * from tb_pedido_item inner join tb_pedido on tb_pedido.id_pedido = tb_pedido_item.id_pedido order by dt_pedido ASC;
 
 //     `
 
@@ -348,10 +490,9 @@ export async function BuscarPedidosConcluidos() {
 
 // export async function FiltroPorMaisAntigo() {
 
-
 //     const comando = `
-    
-//     select * from tb_pedido_item inner join tb_pedido on tb_pedido.id_pedido = tb_pedido_item.id_pedido order by dt_pedido DESC; 
+
+//     select * from tb_pedido_item inner join tb_pedido on tb_pedido.id_pedido = tb_pedido_item.id_pedido order by dt_pedido DESC;
 
 //     `
 
@@ -361,434 +502,380 @@ export async function BuscarPedidosConcluidos() {
 
 // }
 
-
 //feita api ↓
-export async function FiltroPorMaisCaro(){
-
-    const comando = ` 
+export async function FiltroPorMaisCaro() {
+  const comando = ` 
     
     select * from tb_produto order by vl_preco desc;
     
-    ` 
+    `;
 
-    const [linhas] = await con.query(comando);
+  const [linhas] = await con.query(comando);
 
-    return linhas;
-
+  return linhas;
 }
 
-
 //feita api ↓
-export async function FiltroPorMaisBarato(){
-
-    const comando = ` 
+export async function FiltroPorMaisBarato() {
+  const comando = ` 
     
     select * from tb_produto order by vl_preco asc;
     
-    ` 
+    `;
 
-    const [linhas] = await con.query(comando);
+  const [linhas] = await con.query(comando);
 
-    return linhas;
-
+  return linhas;
 }
-
-
 
 //feita api ↓
 export async function ConsultaPorNomeAdm(nome) {
-
-    const comando = `  
+  const comando = `  
     
     select * from tb_produto 
     
     where nm_produto like ?
   
-    `
+    `;
 
-    const [linhas] = await con.query(comando, [`%${nome}%`]);
+  const [linhas] = await con.query(comando, [`%${nome}%`]);
 
-    return linhas;
-
+  return linhas;
 }
 
 //feita api ↓
 export async function FiltroPorCategoriaAdm(categoria) {
-
-    const comando = `  
+  const comando = `  
     
     select * from tb_p_categorias 
     inner join tb_produto on tb_produto.id_produto = tb_p_categorias.id_produto 
     where id_categorias like ?
   
-    `
+    `;
 
-    const [linhas] = await con.query(comando, [`${categoria}`]);
+  const [linhas] = await con.query(comando, [`${categoria}`]);
 
-    return linhas;
-
+  return linhas;
 }
 
-
 export async function FiltroPorTecidoAdm(tecido) {
-
-    const comando = `  
+  const comando = `  
     
     select * from tb_p_tecidos 
     inner join tb_produto on tb_produto.id_produto = tb_p_tecidos.id_produto
     where id_tecido like ?;
   
-    `
+    `;
 
-    const [linhas] = await con.query(comando, [`${tecido}`]);
+  const [linhas] = await con.query(comando, [`${tecido}`]);
 
-    return linhas;
-
+  return linhas;
 }
 
 export async function FiltroPorDesignerAdm(designer) {
-
-    const comando = `  
+  const comando = `  
     
     select * from tb_produto
     
     where id_designer like ?;
   
-    `
+    `;
 
-    const [linhas] = await con.query(comando, [`${designer}`]);
+  const [linhas] = await con.query(comando, [`${designer}`]);
 
-    return linhas;
-
+  return linhas;
 }
 
 export async function FiltroPorCorAdm(cor) {
-
-    const comando = `  
+  const comando = `  
     
     select * from tb_p_cores 
     inner join tb_produto on tb_produto.id_produto = tb_p_cores.id_produto
     where id_cores like ?;
   
-    `
+    `;
 
-    const [linhas] = await con.query(comando, [`${cor}`]);
+  const [linhas] = await con.query(comando, [`${cor}`]);
 
-    return linhas;
-
+  return linhas;
 }
 
 export async function FiltroPorTamanhoAdm(tamanho) {
-
-    const comando = `  
+  const comando = `  
     
     select * from tb_p_tamanho 
     inner join tb_produto on tb_produto.id_produto = tb_p_tamanho.id_produto
     where id_tamanho like ?;
   
-    `
+    `;
 
-    const [linhas] = await con.query(comando, [`${tamanho}`]);
+  const [linhas] = await con.query(comando, [`${tamanho}`]);
 
-    return linhas;
-
+  return linhas;
 }
 
-
-
 export async function FiltroPorValorAdm(valor) {
-
-    const comando = `  
+  const comando = `  
   
       select * from tb_produto 
   
       where vl_preco or vl_promocao between ? or ?;
   
-      `
+      `;
 
-    const [linhas] = await con.query(comando, [valor]);
+  const [linhas] = await con.query(comando, [valor]);
 
-    return linhas[0];
-
+  return linhas[0];
 }
 
-
-
 export async function FiltroPorPromocaoAdm(promocao) {
-
-    const comando = `  
+  const comando = `  
     
     select * from tb_produto 
     
     where bt_promocao like 1;
   
-    `
+    `;
 
-    const [linhas] = await con.query(comando, [promocao]);
+  const [linhas] = await con.query(comando, [promocao]);
 
-    return linhas;
-
+  return linhas;
 }
 
-
 export async function FiltroPorDestaqueAdm(destaque) {
-
-    const comando = `  
+  const comando = `  
     
     select * from tb_produto 
     
     where bt_destaque like 1;
   
-    `
+    `;
 
-    const [linhas] = await con.query(comando, [destaque]);
+  const [linhas] = await con.query(comando, [destaque]);
 
-    return linhas;
-
+  return linhas;
 }
 
-
 export async function FiltroPorDisponivelAdm(disponivel) {
-
-    const comando = `  
+  const comando = `  
     
     select * from tb_produto 
     
     where bt_disponivel = 1;
   
-    `
+    `;
 
-    const [linhas] = await con.query(comando, [disponivel]);
+  const [linhas] = await con.query(comando, [disponivel]);
 
-    return linhas;
-
+  return linhas;
 }
 
-
-export async function FiltroGeralPedidos(){
-
-
-    const comando = `
+export async function FiltroGeralPedidos() {
+  const comando = `
     
     select * from tb_pedido_item;
 
-    `
+    `;
 
-    const [linhas] = await con.query(comando);
+  const [linhas] = await con.query(comando);
 
-    return linhas;
-
+  return linhas;
 }
 
-export async function FiltroPedidosEmAndamento(){
-
-    const comando = `
+export async function FiltroPedidosEmAndamento() {
+  const comando = `
     
     select * from tb_pedido_item
     where ds_situacao like "Em andamento";
 
-    `
+    `;
 
-    const [linhas] = await con.query(comando);
+  const [linhas] = await con.query(comando);
 
-    return linhas;
-
+  return linhas;
 }
 
-
-export async function FiltroPedidosAprovados(){
-
-    const comando = `
+export async function FiltroPedidosAprovados() {
+  const comando = `
     
     select * from tb_pedido_item
     where ds_situacao like "Aprovado";
 
-    `
+    `;
 
-    const [linhas] = await con.query(comando);
+  const [linhas] = await con.query(comando);
 
-    return linhas;
-
+  return linhas;
 }
 
-export async function ExcluirImagem( id ){
-
-    const comando = `
+export async function ExcluirImagem(id) {
+  const comando = `
     
         delete from tb_p_imagem
         where id_imagem = ?;
 
-    `
+    `;
 
-    const [resposta] = await con.query(comando, [ id ]);
+  const [resposta] = await con.query(comando, [id]);
 
-    return resposta.affectedRows;
-
+  return resposta.affectedRows;
 }
 
-export async function DesassociarCategoriaProduto( id ){
-
-    const comando = `
+export async function DesassociarCategoriaProduto(id) {
+  const comando = `
     
     delete from tb_p_categorias
     where id_produto= ?;
 
-`
+`;
 
-const [resposta] = await con.query(comando, [ id ]);
+  const [resposta] = await con.query(comando, [id]);
 
-return resposta.affectedRows;
-
+  return resposta.affectedRows;
 }
 
 
+// export async function procurarImagem(id,image) {
+//   const comando `
+//   select* from tb_produto_imagem`
+  
+// }
 
-export async function DesassociarTamanhoProduto( id ){
-
-    const comando = `
+export async function DesassociarTamanhoProduto(id) {
+  const comando = `
     
     delete from tb_p_tamanho
     where id_produto= ?;
 
-`
+`;
 
-const [resposta] = await con.query(comando, [ id ]);
+  const [resposta] = await con.query(comando, [id]);
 
-return resposta.affectedRows;
-
+  return resposta.affectedRows;
 }
 
-
-export async function DesassociarCoresProduto( id ){
-
-    const comando = `
+export async function DesassociarCoresProduto(id) {
+  const comando = `
     
     delete from tb_p_cores
     where id_produto= ?;
 
-`
+`;
 
-const [resposta] = await con.query(comando, [ id ]);
+  const [resposta] = await con.query(comando, [id]);
 
-return resposta.affectedRows;
-
+  return resposta.affectedRows;
 }
 
-
-
-export async function DesassociarTecidosProduto( id ){
-
-    const comando = `
+export async function DesassociarTecidosProduto(id) {
+  const comando = `
     
     delete from tb_p_tecidos
     where id_produto= ?;
 
-`
+`;
 
-const [resposta] = await con.query(comando, [ id ]);
+  const [resposta] = await con.query(comando, [id]);
 
-return resposta.affectedRows;
-
+  return resposta.affectedRows;
 }
 
-
-export async function ConsultarImagem( id ){
-
-
-    const comando = `
+export async function ConsultarImagem(id) {
+  const comando = `
     
         select img_link from tb_p_imagem 
         inner join tb_produto_imagem on tb_produto_imagem.id_imagem = tb_p_imagem.id_imagem
         where id_produto = ?;
 
-    `
+    `;
 
-    const [ linhas ] = await con.query(comando, [ id ]);
+  const [linhas] = await con.query(comando, [id]);
 
-    return linhas[0];
-
+  return linhas[0];
 }
 
+export async function alterarImagem(imagem) {
+  ` update  tb_produto_imagem
+  set     id_imagem        = ?
+          img_link= ?
+          
+        
+  `
+  const [resposta] = await con.query(comando, [
+    imagem.id_imagem, imagem.img_link,
+  
+  ]);
 
-export async function ExcluirPedido( id ){
+  return resposta.affectedRows;
+}
 
-
-    const comando = `
+export async function ExcluirPedido(id) {
+  const comando = `
     
         delete from tb_pedido_item 
         where id_produto = ?;
 
-    `
+    `;
 
-    const [linhas] = await con.query(comando, [ id ]);
+  const [linhas] = await con.query(comando, [id]);
 
-    return linhas.affectedRows;
-
+  return linhas.affectedRows;
 }
 
-export async function SelectCategorias(){
-
-
-    const comando = `
+export async function SelectCategorias() {
+  const comando = `
     
         select * from tb_categorias
 
-    `
+    `;
 
-    const [ linhas ] = await con.query(comando);
+  const [linhas] = await con.query(comando);
 
-    return linhas;
-
+  return linhas;
 }
 
-
-export async function SelectTecidos(){
-
-
-    const comando = `
+export async function SelectTecidos() {
+  const comando = `
     
         select * from tb_produto_tecidos
 
-    `
+    `;
 
-    const [ linhas ] = await con.query(comando);
+  const [linhas] = await con.query(comando);
 
-    return linhas;
-
+  return linhas;
 }
 
-
-
-export async function SelectDesigner(){
-
-
-    const comando = `
+export async function SelectDesigner() {
+  const comando = `
     
         select * from tb_designer
 
-    `
+    `;
 
-    const [ linhas ] = await con.query(comando);
+  const [linhas] = await con.query(comando);
 
-    return linhas;
-
+  return linhas;
 }
 
-
-
-export async function SelectCores(){
-
-
-    const comando = `
+export async function SelectCores() {
+  const comando = `
     
         select * from tb_cores
 
-    `
+    `;
 
-    const [ linhas ] = await con.query(comando);
+  const [linhas] = await con.query(comando);
 
-    return linhas;
-
+  return linhas;
 }
 
+export async function cadastrarImagem(imagem) {
+  const comando = `INSERT INTO tb_produto_imagem (img_link) VALUES (?)`;
 
+  const [resposta] = await con.query(comando, [imagem]);
+
+  const idDaImagemInserida = resposta.insertId;
+
+  return idDaImagemInserida;
+}
